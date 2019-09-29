@@ -18,4 +18,6 @@
 # direnv
 .envrc
 
+_out
+
 .DS_Store
