@@ -17,11 +17,11 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -53,7 +53,23 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return ctrl.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("vultr cluster: %s - %d", vultrCluster.Name, vultrCluster.Spec.Region))
+	// Fetch the Cluster
+	cluster, err := util.GetOwnerCluster(ctx, r.Client, vultrCluster.ObjectMeta)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if cluster == nil {
+		log.Info("Cluster Controller has not yet set OwnerRef")
+		return ctrl.Result{}, nil
+	}
+
+	vultrCluster.Status.APIEndpoints = []infrav1alpha2.APIEndpoint{}
+	vultrCluster.Status.Ready = true
+
+	if err := r.Status().Update(ctx, vultrCluster); err != nil {
+		log.Error(err, "unable to update VultrCluster status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
