@@ -19,22 +19,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // VultrClusterSpec defines the desired state of VultrCluster
 type VultrClusterSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Required
+
+	// The Vultr Region (DCID) the cluster lives in.
+	Region int `json:"region"`
 }
 
 // VultrClusterStatus defines the observed state of VultrCluster
 type VultrClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Ready bool `json:"ready"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // VultrCluster is the Schema for the vultrclusters API
 type VultrCluster struct {
