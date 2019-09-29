@@ -30,6 +30,8 @@ type VultrClusterSpec struct {
 // VultrClusterStatus defines the observed state of VultrCluster
 type VultrClusterStatus struct {
 	Ready bool `json:"ready"`
+	// +optional
+	APIEndpoints []APIEndpoint `json:"apiEndpoints,omitempty"`
 }
 
 // +kubebuilder:object:root=true
