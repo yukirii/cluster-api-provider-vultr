@@ -8,7 +8,8 @@ CALICO_VERSION="v3.8"
 
 # Vultr Settings
 export SSH_KEY_NAME="${SSH_KEY_NAME:-default}"
-export VULTR_REGION="${VULTR_REGION:-25}" # Tokyo
+export VULTR_REGION="${VULTR_REGION:-25}"   # Tokyo
+export VULTR_B64ENCODED_API_KEY=$(echo ${VULTR_API_KEY} | base64)
 
 # Cluster Settings
 export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.15.3}"
@@ -25,7 +26,7 @@ OUTPUT_DIR=${OUTPUT_DIR:-${SOURCE_DIR}/_out}
 
 COMPONENTS_CLUSTER_API_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-cluster-api.yaml
 COMPONENTS_KUBEADM_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-kubeadm.yaml
-COMPONENTS_VULTR_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-aws.yaml
+COMPONENTS_VULTR_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-vultr.yaml
 
 CLUSTER_GENERATED_FILE=${OUTPUT_DIR}/cluster.yaml
 MACHINES_GENERATED_FILE=${OUTPUT_DIR}/machines.yaml
@@ -48,9 +49,9 @@ echo "Generated ${CLUSTER_GENERATED_FILE}"
 # echo "Generated ${MACHINES_GENERATED_FILE}"
 
 # Download & Generate provider-components.yaml
-## Cluster API Provider Vultr
-# kustomize build "${SOURCE_DIR}/../config/default" | envsubst > "${COMPONENTS_VULTR_GENERATED_FILE}"
-# echo "Generated ${COMPONENTS_VULTR_GENERATED_FILE}"
+# Cluster API Provider Vultr
+kustomize build "${SOURCE_DIR}/../config/default" | envsubst > "${COMPONENTS_VULTR_GENERATED_FILE}"
+echo "Generated ${COMPONENTS_VULTR_GENERATED_FILE}"
 
 ## Cluster API
 kustomize build "github.com/kubernetes-sigs/cluster-api//config/default/?ref=${CAPI_VERSION}" > "${COMPONENTS_CLUSTER_API_GENERATED_FILE}"

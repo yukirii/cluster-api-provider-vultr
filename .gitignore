@@ -19,5 +19,6 @@
 .envrc
 
 _out
+examples/provider-components/provider-components-*.yaml
 
 .DS_Store
