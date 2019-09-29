@@ -17,34 +17,49 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	infrastructurev1alpha2 "github.com/yukirii/cluster-api-provider-vultr/api/v1alpha2"
+	infrav1alpha2 "github.com/yukirii/cluster-api-provider-vultr/api/v1alpha2"
 )
 
 // VultrClusterReconciler reconciles a VultrCluster object
 type VultrClusterReconciler struct {
 	client.Client
-	Log logr.Logger
+	Log      logr.Logger
+	Recorder record.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=vultrclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=infrastructure.cluster.x-k8s.io,resources=vultrclusters/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cluster.x-k8s.io,resources=clusters;clusters/status,verbs=get;list;watch
 
 func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("vultrcluster", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("vultrcluster", req.NamespacedName)
 
-	// your logic here
+	// Fetch the VultrCluster
+	vultrCluster := &infrav1alpha2.VultrCluster{}
+	err := r.Get(ctx, req.NamespacedName, vultrCluster)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+
+	log.Info(fmt.Sprintf("vultr cluster: %s - %d", vultrCluster.Name, vultrCluster.Spec.Region))
 
 	return ctrl.Result{}, nil
 }
 
 func (r *VultrClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructurev1alpha2.VultrCluster{}).
+		For(&infrav1alpha2.VultrCluster{}).
 		Complete(r)
 }

@@ -1,0 +1,6 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha2
+kind: VultrCluster
+metadata:
+  name: my-first-cluster
+spec:
+  region: 25  # Tokyo
