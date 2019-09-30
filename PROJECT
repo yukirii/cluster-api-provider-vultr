@@ -5,3 +5,6 @@ resources:
 - group: infrastructure
   version: v1alpha2
   kind: VultrCluster
+- group: infrastructure
+  version: v1alpha2
+  kind: VultrMachine

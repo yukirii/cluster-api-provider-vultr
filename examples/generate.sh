@@ -44,9 +44,9 @@ mkdir -p "${OUTPUT_DIR}"
 kustomize build "${SOURCE_DIR}/cluster" | envsubst > "${CLUSTER_GENERATED_FILE}"
 echo "Generated ${CLUSTER_GENERATED_FILE}"
 
-# Generate machines manifest
-# kustomize build "${SOURCE_DIR}/machines" | envsubst > "${MACHINES_GENERATED_FILE}"
-# echo "Generated ${MACHINES_GENERATED_FILE}"
+# Generate machine manifest
+kustomize build "${SOURCE_DIR}/machine" | envsubst > "${MACHINES_GENERATED_FILE}"
+echo "Generated ${MACHINES_GENERATED_FILE}"
 
 # Download & Generate provider-components.yaml
 # Cluster API Provider Vultr
