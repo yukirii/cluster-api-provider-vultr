@@ -22,7 +22,8 @@ kind: VultrMachine
 metadata:
   name: ${CLUSTER_NAME}-controlplane-0
 spec:
-  instanceType: ${CONTROL_PLANE_MACHINE_TYPE}
+  planID: ${CONTROL_PLANE_PLAN_ID}
+  osID: ${CONTROL_PLANE_OS_ID}
   sshKeyName: ${SSH_KEY_NAME}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha2

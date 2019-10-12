@@ -46,7 +46,7 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 	ctx := context.Background()
 	log := r.Log.WithValues("vultrcluster", req.NamespacedName)
 
-	// Fetch the VultrCluster
+	// Fetch the VultrCluster.
 	vultrCluster := &infrav1alpha2.VultrCluster{}
 	err := r.Get(ctx, req.NamespacedName, vultrCluster)
 	if err != nil {
@@ -56,7 +56,7 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the Cluster
+	// Fetch the Cluster.
 	cluster, err := util.GetOwnerCluster(ctx, r.Client, vultrCluster.ObjectMeta)
 	if err != nil {
 		return ctrl.Result{}, err

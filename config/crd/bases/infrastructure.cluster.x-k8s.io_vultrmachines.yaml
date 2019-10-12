@@ -34,9 +34,16 @@ spec:
         spec:
           description: VultrMachineSpec defines the desired state of VultrMachine
           properties:
-            planId:
+            osID:
+              description: OSID is the id of operating system (OSID).
+              type: integer
+            planID:
               description: PlanID is the id of Vultr VPS plan (VPSPLANID).
               type: integer
+            providerID:
+              description: ProviderID is the unique identifer as specified by the
+                cloud provider.
+              type: string
             sshKeyName:
               description: SSHKeyName is the name of the ssh key to attach to the
                 instance.

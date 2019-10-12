@@ -19,6 +19,9 @@ export CLUSTER_NAME="${CLUSTER_NAME:-capi}"
 # VPSPLANID 203: 2 vCPU, 4096MB RAM, 80GB SSD, 3.00 TB BW
 export CONTROL_PLANE_PLAN_ID="${CONTROL_PLANE_PLAN_ID:-203}"
 export WORKER_PLAN_ID="${WORKER_PLAN_ID:-203}"
+# OSID 338: Ubuntu 19.04 x64
+export CONTROL_PLANE_OS_ID="${CONTROL_PLANE_OS_ID:-338}"
+export WORKER_OS_ID="${WORKER_OS_ID:-338}"
 
 # Output Settings
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"

@@ -19,10 +19,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	MachineFinalizer = "vultrmachine.infrastructure.cluster.x-k8s.io"
+)
+
 // VultrMachineSpec defines the desired state of VultrMachine
 type VultrMachineSpec struct {
+	// ProviderID is the unique identifer as specified by the cloud provider.
+	ProviderID *string `json:"providerID,omitempty"`
+
+	// OSID is the id of operating system (OSID).
+	OSID int `json:"osID,omitempty"`
+
 	// PlanID is the id of Vultr VPS plan (VPSPLANID).
-	PlanID int `json:"planId,omitempty"`
+	PlanID int `json:"planID,omitempty"`
 
 	// SSHKeyName is the name of the ssh key to attach to the instance.
 	SSHKeyName string `json:"sshKeyName,omitempty"`
