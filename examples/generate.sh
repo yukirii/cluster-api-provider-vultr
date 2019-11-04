@@ -12,13 +12,16 @@ export VULTR_REGION="${VULTR_REGION:-25}"   # Tokyo
 export VULTR_B64ENCODED_API_KEY=$(echo ${VULTR_API_KEY} | base64)
 
 # Cluster Settings
-export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.15.3}"
+export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.16.2}"
 export CLUSTER_NAME="${CLUSTER_NAME:-capi}"
 
 # Machine Settings
 # VPSPLANID 203: 2 vCPU, 4096MB RAM, 80GB SSD, 3.00 TB BW
 export CONTROL_PLANE_PLAN_ID="${CONTROL_PLANE_PLAN_ID:-203}"
 export WORKER_PLAN_ID="${WORKER_PLAN_ID:-203}"
+# OSID 338: Ubuntu 19.04 x64
+export CONTROL_PLANE_OS_ID="${CONTROL_PLANE_OS_ID:-338}"
+export WORKER_OS_ID="${WORKER_OS_ID:-338}"
 
 # Output Settings
 SOURCE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -44,9 +47,9 @@ mkdir -p "${OUTPUT_DIR}"
 kustomize build "${SOURCE_DIR}/cluster" | envsubst > "${CLUSTER_GENERATED_FILE}"
 echo "Generated ${CLUSTER_GENERATED_FILE}"
 
-# Generate machines manifest
-# kustomize build "${SOURCE_DIR}/machines" | envsubst > "${MACHINES_GENERATED_FILE}"
-# echo "Generated ${MACHINES_GENERATED_FILE}"
+# Generate machine manifest
+kustomize build "${SOURCE_DIR}/machine" | envsubst > "${MACHINES_GENERATED_FILE}"
+echo "Generated ${MACHINES_GENERATED_FILE}"
 
 # Download & Generate provider-components.yaml
 # Cluster API Provider Vultr

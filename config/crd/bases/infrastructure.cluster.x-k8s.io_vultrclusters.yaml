@@ -47,6 +47,9 @@ spec:
               items:
                 description: APIEndpoint represents control-plane's apiserver endpoints.
                 properties:
+                  SUBID:
+                    description: ID is the id of Vultr reserved IP (SUBID).
+                    type: string
                   host:
                     description: The hostname on which the API server is serving.
                     type: string
@@ -54,6 +57,7 @@ spec:
                     description: The port on which the API server is serving.
                     type: integer
                 required:
+                - SUBID
                 - host
                 - port
                 type: object

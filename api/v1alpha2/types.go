@@ -17,9 +17,43 @@ package v1alpha2
 
 // APIEndpoint represents control-plane's apiserver endpoints.
 type APIEndpoint struct {
+	// ID is the id of Vultr reserved IP (SUBID).
+	ID string `json:"SUBID,string"`
+
 	// The hostname on which the API server is serving.
 	Host string `json:"host"`
 
 	// The port on which the API server is serving.
 	Port int `json:"port"`
 }
+
+// ServerStatus represents the status of subscription.
+type SubscriptionStatus string
+
+var (
+	SubscriptionStatusPending   = SubscriptionStatus("pending")
+	SubscriptionStatusActive    = SubscriptionStatus("active")
+	SubscriptionStatusSuspended = SubscriptionStatus("suspended")
+	SubscriptionStatusClosed    = SubscriptionStatus("closed")
+)
+
+// PowerStatus represents that the VPS is powerd on or not
+type PowerStatus string
+
+var (
+	PowerStatusStarting = PowerStatus("starting")
+	PowerStatusStopped  = PowerStatus("stopped")
+	PowerStatusRunning  = PowerStatus("running")
+)
+
+// ServerState represents a detail of server state.
+type ServerState string
+
+var (
+	ServerStateNone        = ServerState("none")
+	ServerStateLocked      = ServerState("locked")
+	ServerStateInstalling  = ServerState("installing")
+	ServerStateBooting     = ServerState("booting")
+	ServerStateIsoMounting = ServerState("isomounting")
+	ServerStateOK          = ServerState("ok")
+)
