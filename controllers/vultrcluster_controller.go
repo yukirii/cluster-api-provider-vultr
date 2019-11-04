@@ -17,7 +17,10 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"os"
 
+	vultr "github.com/JamesClonk/vultr/lib"
 	"github.com/go-logr/logr"
 	"github.com/labstack/gommon/log"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -79,17 +82,61 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 		}
 	}()
 
+	if !vultrCluster.ObjectMeta.DeletionTimestamp.IsZero() {
+		return r.reconcileClusterDelete(log, cluster, vultrCluster)
+	}
+
 	return r.reconcileCluster(log, cluster, vultrCluster)
+}
+
+func (r *VultrClusterReconciler) reconcileClusterDelete(logger logr.Logger, cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster) (ctrl.Result, error) {
+	log.Info("Reconciling Cluster Delete")
+
+	apiKey := os.Getenv("VULTR_API_KEY")
+	vultrClient := vultr.NewClient(apiKey, nil)
+
+	for _, e := range vultrCluster.Status.APIEndpoints {
+		fmt.Println(e.ID)
+		err := vultrClient.DestroyReservedIP(e.ID)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	vultrCluster.Finalizers = util.Filter(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
+
+	return ctrl.Result{}, nil
 }
 
 func (r *VultrClusterReconciler) reconcileCluster(logger logr.Logger, cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster) (ctrl.Result, error) {
 	log.Info("Reconciling Cluster")
 
-	vultrCluster.Status.APIEndpoints = []infrav1alpha2.APIEndpoint{
-		{
-			Host: "dummy", // FIXME
-			Port: 443,
-		},
+	// Add finalizer
+	if !util.Contains(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer) {
+		vultrCluster.Finalizers = append(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
+	}
+
+	if len(vultrCluster.Status.APIEndpoints) == 0 {
+		apiKey := os.Getenv("VULTR_API_KEY")
+		vultrClient := vultr.NewClient(apiKey, nil)
+
+		id, err := vultrClient.CreateReservedIP(vultrCluster.Spec.Region, "v4", vultrCluster.Name)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		ip, err := r.findReservedIP(vultrClient, id)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+
+		vultrCluster.Status.APIEndpoints = []infrav1alpha2.APIEndpoint{
+			{
+				ID:   id,
+				Host: ip,
+				Port: 6443,
+			},
+		}
 	}
 
 	vultrCluster.Status.Ready = true
@@ -97,6 +144,21 @@ func (r *VultrClusterReconciler) reconcileCluster(logger logr.Logger, cluster *c
 	log.Info("Reconciled Cluster successfully")
 
 	return ctrl.Result{}, nil
+}
+
+func (r *VultrClusterReconciler) findReservedIP(vultrClient *vultr.Client, id string) (string, error) {
+	ips, err := vultrClient.ListReservedIP()
+	if err != nil {
+		return "", err
+	}
+
+	for _, ip := range ips {
+		if ip.ID == id {
+			return ip.Subnet, nil
+		}
+	}
+
+	return "", nil
 }
 
 func (r *VultrClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -17,6 +17,9 @@ package v1alpha2
 
 // APIEndpoint represents control-plane's apiserver endpoints.
 type APIEndpoint struct {
+	// ID is the id of Vultr reserved IP (SUBID).
+	ID string `json:"SUBID,string"`
+
 	// The hostname on which the API server is serving.
 	Host string `json:"host"`
 

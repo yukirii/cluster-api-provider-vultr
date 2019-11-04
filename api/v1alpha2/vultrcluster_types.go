@@ -19,6 +19,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ClusterFinalizer = "vultrcluster.infrastructure.cluster.x-k8s.io"
+)
+
 // VultrClusterSpec defines the desired state of VultrCluster
 type VultrClusterSpec struct {
 	// +kubebuilder:validation:Required
