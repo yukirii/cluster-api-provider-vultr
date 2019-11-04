@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -222,10 +223,20 @@ func (r *VultrMachineReconciler) getOrCreate(vultrCluster *infrav1alpha2.VultrCl
 			return nil, err
 		}
 
+		userdata, err := base64.StdEncoding.DecodeString(*machine.Spec.Bootstrap.Data)
+		if err != nil {
+			return nil, err
+		}
+
 		options := &vultr.ServerOptions{
-			UserData: *machine.Spec.Bootstrap.Data,
-			SSHKey:   sshKeyID,
-			Tag:      fmt.Sprintf("%s:owned", vultrCluster.Name),
+			ReservedIP: vultrCluster.Status.APIEndpoints[0].Host,
+			UserData:   string(userdata),
+			SSHKey:     sshKeyID,
+			Tag:        fmt.Sprintf("%s:owned", vultrCluster.Name),
+		}
+
+		if vultrMachine.Spec.ScriptID != 0 {
+			options.Script = vultrMachine.Spec.ScriptID
 		}
 
 		srv, err := vultrClient.CreateServer(machine.Name,

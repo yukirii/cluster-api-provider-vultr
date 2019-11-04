@@ -36,6 +36,9 @@ type VultrMachineSpec struct {
 
 	// SSHKeyName is the name of the ssh key to attach to the instance.
 	SSHKeyName string `json:"sshKeyName,omitempty"`
+
+	// ScriptID is the id of Startup Script (SCRIPTID).
+	ScriptID int `json:"scriptID,omitempty"`
 }
 
 // VultrMachineStatus defines the observed state of VultrMachine

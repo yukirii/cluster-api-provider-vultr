@@ -44,6 +44,9 @@ spec:
               description: ProviderID is the unique identifer as specified by the
                 cloud provider.
               type: string
+            scriptID:
+              description: ScriptID is the id of Startup Script (SCRIPTID).
+              type: integer
             sshKeyName:
               description: SSHKeyName is the name of the ssh key to attach to the
                 instance.
