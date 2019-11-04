@@ -12,7 +12,7 @@ export VULTR_REGION="${VULTR_REGION:-25}"   # Tokyo
 export VULTR_B64ENCODED_API_KEY=$(echo ${VULTR_API_KEY} | base64)
 
 # Cluster Settings
-export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.15.3}"
+export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.16.2}"
 export CLUSTER_NAME="${CLUSTER_NAME:-capi}"
 
 # Machine Settings
