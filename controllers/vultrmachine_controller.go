@@ -125,7 +125,7 @@ func (r *VultrMachineReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 func (r *VultrMachineReconciler) reconcileDelete(machineScope *scope.MachineScope) (ctrl.Result, error) {
 	log.Info("Reconciling Machine Delete")
 
-	server, err := r.findServer(machineScope.VultrClient, machineScope.VultrCluster, machineScope.VultrMachine)
+	server, err := r.findServer(machineScope)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -169,10 +169,10 @@ func (r *VultrMachineReconciler) reconcileNormal(machineScope *scope.MachineScop
 	return ctrl.Result{}, nil
 }
 
-func (r *VultrMachineReconciler) findServer(vultrClient *vultr.Client, vultrCluster *infrav1alpha2.VultrCluster, vultrMachine *infrav1alpha2.VultrMachine) (*vultr.Server, error) {
+func (r *VultrMachineReconciler) findServer(machineScope *scope.MachineScope) (*vultr.Server, error) {
 	providerID := ""
-	if vultrMachine.Spec.ProviderID != nil {
-		providerID = *vultrMachine.Spec.ProviderID
+	if machineScope.VultrMachine.Spec.ProviderID != nil {
+		providerID = *machineScope.VultrMachine.Spec.ProviderID
 	}
 
 	// Parse the ProviderID.
@@ -183,7 +183,7 @@ func (r *VultrMachineReconciler) findServer(vultrClient *vultr.Client, vultrClus
 
 	// If the ProviderID populated, get the server using the ID.
 	if err == nil {
-		server, err := vultrClient.GetServer(pid.ID())
+		server, err := machineScope.VultrClient.GetServer(pid.ID())
 		if err != nil && err.Error() == "Invalid server." {
 			return nil, nil
 		}
@@ -194,14 +194,14 @@ func (r *VultrMachineReconciler) findServer(vultrClient *vultr.Client, vultrClus
 	}
 
 	// If the ProviderID is empty, try to get the server using tag and name (label).
-	tag := fmt.Sprintf("%s:owned", vultrCluster.Name)
-	servers, err := vultrClient.GetServersByTag(tag)
+	tag := fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name)
+	servers, err := machineScope.VultrClient.GetServersByTag(tag)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, s := range servers {
-		if s.Name == vultrMachine.GetName() {
+		if s.Name == machineScope.VultrMachine.GetName() {
 			return &s, nil
 		}
 	}
@@ -210,7 +210,7 @@ func (r *VultrMachineReconciler) findServer(vultrClient *vultr.Client, vultrClus
 }
 
 func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (*vultr.Server, error) {
-	server, err := r.findServer(machineScope.VultrClient, machineScope.VultrCluster, machineScope.VultrMachine)
+	server, err := r.findServer(machineScope)
 	if err != nil {
 		return nil, err
 	}
