@@ -17,21 +17,19 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	vultr "github.com/JamesClonk/vultr/lib"
 	"github.com/go-logr/logr"
 	"github.com/labstack/gommon/log"
+	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha2"
 	"sigs.k8s.io/cluster-api/util"
-	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	infrav1alpha2 "github.com/yukirii/cluster-api-provider-vultr/api/v1alpha2"
+	"github.com/yukirii/cluster-api-provider-vultr/pkg/cloud/scope"
 )
 
 // VultrClusterReconciler reconciles a VultrCluster object
@@ -71,66 +69,65 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 
 	log = r.Log.WithValues("cluster", cluster.Name)
 
-	patchHelper, err := patch.NewHelper(vultrCluster, r)
+	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
+		Client:       r.Client,
+		Logger:       log,
+		Cluster:      cluster,
+		VultrCluster: vultrCluster,
+	})
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.Errorf("failed to create scope: %v", err)
 	}
+
 	defer func() {
-		err := patchHelper.Patch(ctx, vultrCluster)
+		err := clusterScope.Close()
 		if err != nil && reterr == nil {
 			reterr = err
 		}
 	}()
 
 	if !vultrCluster.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileClusterDelete(log, cluster, vultrCluster)
+		return r.reconcileClusterDelete(clusterScope)
 	}
 
-	return r.reconcileCluster(log, cluster, vultrCluster)
+	return r.reconcileCluster(clusterScope)
 }
 
-func (r *VultrClusterReconciler) reconcileClusterDelete(logger logr.Logger, cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster) (ctrl.Result, error) {
+func (r *VultrClusterReconciler) reconcileClusterDelete(clusterScope *scope.ClusterScope) (ctrl.Result, error) {
 	log.Info("Reconciling Cluster Delete")
 
-	apiKey := os.Getenv("VULTR_API_KEY")
-	vultrClient := vultr.NewClient(apiKey, nil)
-
-	for _, e := range vultrCluster.Status.APIEndpoints {
-		fmt.Println(e.ID)
-		err := vultrClient.DestroyReservedIP(e.ID)
+	for _, e := range clusterScope.VultrCluster.Status.APIEndpoints {
+		err := clusterScope.VultrClient.DestroyReservedIP(e.ID)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	vultrCluster.Finalizers = util.Filter(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
+	clusterScope.VultrCluster.Finalizers = util.Filter(clusterScope.VultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *VultrClusterReconciler) reconcileCluster(logger logr.Logger, cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster) (ctrl.Result, error) {
+func (r *VultrClusterReconciler) reconcileCluster(clusterScope *scope.ClusterScope) (ctrl.Result, error) {
 	log.Info("Reconciling Cluster")
 
 	// Add finalizer
-	if !util.Contains(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer) {
-		vultrCluster.Finalizers = append(vultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
+	if !util.Contains(clusterScope.VultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer) {
+		clusterScope.VultrCluster.Finalizers = append(clusterScope.VultrCluster.Finalizers, infrav1alpha2.ClusterFinalizer)
 	}
 
-	if len(vultrCluster.Status.APIEndpoints) == 0 {
-		apiKey := os.Getenv("VULTR_API_KEY")
-		vultrClient := vultr.NewClient(apiKey, nil)
-
-		id, err := vultrClient.CreateReservedIP(vultrCluster.Spec.Region, "v4", vultrCluster.Name)
+	if len(clusterScope.VultrCluster.Status.APIEndpoints) == 0 {
+		id, err := clusterScope.VultrClient.CreateReservedIP(clusterScope.VultrCluster.Spec.Region, "v4", clusterScope.VultrCluster.Name)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		ip, err := r.findReservedIP(vultrClient, id)
+		ip, err := r.findReservedIP(clusterScope.VultrClient, id)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 
-		vultrCluster.Status.APIEndpoints = []infrav1alpha2.APIEndpoint{
+		clusterScope.VultrCluster.Status.APIEndpoints = []infrav1alpha2.APIEndpoint{
 			{
 				ID:   id,
 				Host: ip,
@@ -139,7 +136,7 @@ func (r *VultrClusterReconciler) reconcileCluster(logger logr.Logger, cluster *c
 		}
 	}
 
-	vultrCluster.Status.Ready = true
+	clusterScope.VultrCluster.Status.Ready = true
 
 	log.Info("Reconciled Cluster successfully")
 
