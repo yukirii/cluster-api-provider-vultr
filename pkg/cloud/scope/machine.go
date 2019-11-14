@@ -81,8 +81,9 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 		Logger:       params.Logger,
 		Cluster:      params.Cluster,
 		Machine:      params.Machine,
-		VultrClient:  params.VultrClient,
+		VultrCluster: params.VultrCluster,
 		VultrMachine: params.VultrMachine,
+		VultrClient:  params.VultrClient,
 		patchHelper:  helper,
 	}, nil
 }
