@@ -19,22 +19,21 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
 
 	vultr "github.com/JamesClonk/vultr/lib"
 	"github.com/go-logr/logr"
+	"github.com/labstack/gommon/log"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/pointer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha2"
 	"sigs.k8s.io/cluster-api/controllers/noderefutil"
 	"sigs.k8s.io/cluster-api/util"
-	"sigs.k8s.io/cluster-api/util/patch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	infrastructurev1alpha2 "github.com/yukirii/cluster-api-provider-vultr/api/v1alpha2"
 	infrav1alpha2 "github.com/yukirii/cluster-api-provider-vultr/api/v1alpha2"
+	"github.com/yukirii/cluster-api-provider-vultr/pkg/cloud/scope"
 )
 
 // VultrMachineReconciler reconciles a VultrMachine object
@@ -94,74 +93,78 @@ func (r *VultrMachineReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 		return ctrl.Result{}, nil
 	}
 
-	patchHelper, err := patch.NewHelper(vultrMachine, r)
+	log = r.Log.WithValues("vultrCluster", vultrCluster.Name)
+
+	// Create the machine scope
+	machineScope, err := scope.NewMachineScope(scope.MachineScopeParams{
+		Client:       r.Client,
+		Logger:       log,
+		Cluster:      cluster,
+		Machine:      machine,
+		VultrCluster: vultrCluster,
+		VultrMachine: vultrMachine,
+	})
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, errors.Errorf("failed to create scope: %v", err)
 	}
+
 	defer func() {
-		err := patchHelper.Patch(ctx, vultrMachine)
+		err := machineScope.Close()
 		if err != nil && reterr == nil {
 			reterr = err
 		}
 	}()
 
 	if !vultrMachine.ObjectMeta.DeletionTimestamp.IsZero() {
-		return r.reconcileDelete(log, cluster, vultrCluster, machine, vultrMachine)
+		return r.reconcileDelete(machineScope)
 	}
 
-	return r.reconcileNormal(log, cluster, vultrCluster, machine, vultrMachine)
+	return r.reconcileNormal(machineScope)
 }
 
-func (r *VultrMachineReconciler) reconcileDelete(log logr.Logger,
-	cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster,
-	machine *clusterv1.Machine, vultrMachine *infrav1alpha2.VultrMachine) (ctrl.Result, error) {
+func (r *VultrMachineReconciler) reconcileDelete(machineScope *scope.MachineScope) (ctrl.Result, error) {
 	log.Info("Reconciling Machine Delete")
 
-	apiKey := os.Getenv("VULTR_API_KEY")
-	vultrClient := vultr.NewClient(apiKey, nil)
-
-	server, err := r.findServer(vultrClient, vultrCluster, vultrMachine)
+	server, err := r.findServer(machineScope.VultrClient, machineScope.VultrCluster, machineScope.VultrMachine)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	err = vultrClient.DeleteServer(server.ID)
+	err = machineScope.VultrClient.DeleteServer(server.ID)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	vultrMachine.Finalizers = util.Filter(vultrMachine.Finalizers, infrav1alpha2.MachineFinalizer)
+	machineScope.VultrMachine.Finalizers = util.Filter(machineScope.VultrMachine.Finalizers, infrav1alpha2.MachineFinalizer)
 
 	return ctrl.Result{}, nil
 }
 
-func (r *VultrMachineReconciler) reconcileNormal(log logr.Logger,
-	cluster *clusterv1.Cluster, vultrCluster *infrav1alpha2.VultrCluster,
-	machine *clusterv1.Machine, vultrMachine *infrav1alpha2.VultrMachine) (ctrl.Result, error) {
+func (r *VultrMachineReconciler) reconcileNormal(machineScope *scope.MachineScope) (ctrl.Result, error) {
 	log.Info("Reconciling Machine")
 
 	// Add finalizer
-	if !util.Contains(vultrMachine.Finalizers, infrav1alpha2.MachineFinalizer) {
-		vultrMachine.Finalizers = append(vultrMachine.Finalizers, infrav1alpha2.MachineFinalizer)
+	if !util.Contains(machineScope.VultrMachine.Finalizers, infrav1alpha2.MachineFinalizer) {
+		machineScope.VultrMachine.Finalizers = append(machineScope.VultrMachine.Finalizers, infrav1alpha2.MachineFinalizer)
 	}
 
-	if cluster.Status.InfrastructureReady != true {
+	if machineScope.Cluster.Status.InfrastructureReady != true {
 		log.Info("Cluster infrastructure is not ready yet.")
 		return ctrl.Result{}, nil
 	}
 
-	if machine.Spec.Bootstrap.Data == nil {
+	if machineScope.Machine.Spec.Bootstrap.Data == nil {
 		log.Info("Bootstrap data is not yet available.")
 		return ctrl.Result{}, nil
 	}
 
-	server, err := r.getOrCreate(vultrCluster, machine, vultrMachine)
+	server, err := r.getOrCreate(machineScope)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	vultrMachine.Spec.ProviderID = pointer.StringPtr(fmt.Sprintf("vultr:////%s", server.ID))
-	vultrMachine.Status.Ready = true
+	machineScope.VultrMachine.Spec.ProviderID = pointer.StringPtr(fmt.Sprintf("vultr:////%s", server.ID))
+	machineScope.VultrMachine.Status.Ready = true
 
 	return ctrl.Result{}, nil
 }
@@ -206,42 +209,38 @@ func (r *VultrMachineReconciler) findServer(vultrClient *vultr.Client, vultrClus
 	return nil, nil
 }
 
-func (r *VultrMachineReconciler) getOrCreate(vultrCluster *infrav1alpha2.VultrCluster,
-	machine *clusterv1.Machine, vultrMachine *infrav1alpha2.VultrMachine) (*vultr.Server, error) {
-	apiKey := os.Getenv("VULTR_API_KEY")
-	vultrClient := vultr.NewClient(apiKey, nil)
-
-	server, err := r.findServer(vultrClient, vultrCluster, vultrMachine)
+func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (*vultr.Server, error) {
+	server, err := r.findServer(machineScope.VultrClient, machineScope.VultrCluster, machineScope.VultrMachine)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a new server if we couldn't get a server
 	if server == nil {
-		sshKeyID, err := r.getSSHKeyIDByName(vultrClient, &vultrMachine.Spec.SSHKeyName)
+		sshKeyID, err := r.getSSHKeyIDByName(machineScope.VultrClient, &machineScope.VultrMachine.Spec.SSHKeyName)
 		if err != nil {
 			return nil, err
 		}
 
-		userdata, err := base64.StdEncoding.DecodeString(*machine.Spec.Bootstrap.Data)
+		userdata, err := base64.StdEncoding.DecodeString(*machineScope.Machine.Spec.Bootstrap.Data)
 		if err != nil {
 			return nil, err
 		}
 
 		options := &vultr.ServerOptions{
-			ReservedIP: vultrCluster.Status.APIEndpoints[0].Host,
+			ReservedIP: machineScope.VultrCluster.Status.APIEndpoints[0].Host,
 			UserData:   string(userdata),
 			SSHKey:     sshKeyID,
-			Tag:        fmt.Sprintf("%s:owned", vultrCluster.Name),
+			Tag:        fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name),
 		}
 
-		if vultrMachine.Spec.ScriptID != 0 {
-			options.Script = vultrMachine.Spec.ScriptID
+		if machineScope.VultrMachine.Spec.ScriptID != 0 {
+			options.Script = machineScope.VultrMachine.Spec.ScriptID
 		}
 
-		srv, err := vultrClient.CreateServer(machine.Name,
-			vultrCluster.Spec.Region, vultrMachine.Spec.PlanID, vultrMachine.Spec.OSID,
-			options)
+		srv, err := machineScope.VultrClient.CreateServer(machineScope.Machine.Name,
+			machineScope.VultrCluster.Spec.Region, machineScope.VultrMachine.Spec.PlanID,
+			machineScope.VultrMachine.Spec.OSID, options)
 
 		server = &srv
 	}
