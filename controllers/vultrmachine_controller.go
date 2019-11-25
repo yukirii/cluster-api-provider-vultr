@@ -130,9 +130,11 @@ func (r *VultrMachineReconciler) reconcileDelete(machineScope *scope.MachineScop
 		return ctrl.Result{}, err
 	}
 
-	err = machineScope.VultrClient.DeleteServer(server.ID)
-	if err != nil {
-		return ctrl.Result{}, err
+	if server != nil {
+		err = machineScope.VultrClient.DeleteServer(server.ID)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	machineScope.VultrMachine.Finalizers = util.Filter(machineScope.VultrMachine.Finalizers, infrav1alpha2.MachineFinalizer)
