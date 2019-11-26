@@ -2,8 +2,8 @@
 
 # Versions
 CAPV_VERSION="v0.0.0"
-CAPI_VERSION="v0.2.3"
-CABPK_VERSION="v0.1.1"
+CAPI_VERSION="v0.2.7"
+CABPK_VERSION="v0.1.5"
 CALICO_VERSION="v3.8"
 
 # Vultr Settings
