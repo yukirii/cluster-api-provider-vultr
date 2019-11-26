@@ -230,12 +230,18 @@ func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (
 		}
 
 		options := &vultr.ServerOptions{
-			ReservedIP: machineScope.VultrCluster.Status.APIEndpoints[0].Host,
-			UserData:   string(userdata),
-			SSHKey:     sshKeyID,
-			Tag:        fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name),
+			UserData: string(userdata),
+			SSHKey:   sshKeyID,
+			Tag:      fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name),
 		}
 
+		// Set ReservedIP if the Machine has control-plane annotation
+		annotations := machineScope.Machine.GetAnnotations()
+		if annotations["cluster.x-k8s.io/control-plane"] == "true" {
+			options.ReservedIP = machineScope.VultrCluster.Status.APIEndpoints[0].Host
+		}
+
+		// Set ScriptID if the Machine has Vultr Script ID
 		if machineScope.VultrMachine.Spec.ScriptID != 0 {
 			options.Script = machineScope.VultrMachine.Spec.ScriptID
 		}
@@ -243,6 +249,9 @@ func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (
 		srv, err := machineScope.VultrClient.CreateServer(machineScope.Machine.Name,
 			machineScope.VultrCluster.Spec.Region, machineScope.VultrMachine.Spec.PlanID,
 			machineScope.VultrMachine.Spec.OSID, options)
+		if err != nil {
+			return nil, err
+		}
 
 		server = &srv
 	}
