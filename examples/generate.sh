@@ -32,6 +32,7 @@ COMPONENTS_KUBEADM_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-com
 COMPONENTS_VULTR_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-vultr.yaml
 
 CLUSTER_GENERATED_FILE=${OUTPUT_DIR}/cluster.yaml
+CONTROLPLANE_GENERATED_FILE=${OUTPUT_DIR}/controlplane.yaml
 MACHINES_GENERATED_FILE=${OUTPUT_DIR}/machines.yaml
 PROVIDER_COMPONENTS_GENERATED_FILE=${OUTPUT_DIR}/provider-components.yaml
 ADDON_GENERATED_FILE=${OUTPUT_DIR}/addon.yaml
@@ -46,6 +47,10 @@ mkdir -p "${OUTPUT_DIR}"
 # Generate cluster manifest
 kustomize build "${SOURCE_DIR}/cluster" | envsubst > "${CLUSTER_GENERATED_FILE}"
 echo "Generated ${CLUSTER_GENERATED_FILE}"
+
+# Generate controlplane manifest
+kustomize build "${SOURCE_DIR}/controlplane" | envsubst > "${CONTROLPLANE_GENERATED_FILE}"
+echo "Generated ${CONTROLPLANE_GENERATED_FILE}"
 
 # Generate machine manifest
 kustomize build "${SOURCE_DIR}/machine" | envsubst > "${MACHINES_GENERATED_FILE}"

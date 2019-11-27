@@ -1,0 +1,40 @@
+apiVersion: cluster.x-k8s.io/v1alpha2
+kind: Machine
+metadata:
+  name: ${CLUSTER_NAME}-node-0
+  labels:
+    cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+spec:
+  version: ${KUBERNETES_VERSION}
+  bootstrap:
+    configRef:
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha2
+      kind: KubeadmConfig
+      name: ${CLUSTER_NAME}-node-0
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha2
+    kind: VultrMachine
+    name: ${CLUSTER_NAME}-node-0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha2
+kind: VultrMachine
+metadata:
+  name: ${CLUSTER_NAME}-node-0
+spec:
+  planID: ${CONTROL_PLANE_PLAN_ID}
+  osID: ${CONTROL_PLANE_OS_ID}
+  sshKeyName: ${SSH_KEY_NAME}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha2
+kind: KubeadmConfig
+metadata:
+  name: ${CLUSTER_NAME}-node-0
+spec:
+  joinConfiguration:
+    nodeRegistration:
+      name: '{{ ds.meta_data.hostname }}'
+      kubeletExtraArgs:
+        cloud-provider: external
+  clusterConfiguration:
+    apiServer: {}
+    controllerManager: {}
