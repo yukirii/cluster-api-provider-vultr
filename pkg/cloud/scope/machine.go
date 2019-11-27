@@ -52,6 +52,22 @@ type MachineScope struct {
 
 // NewMachineScope creates a new Scope from the supplied parameters.
 func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
+	if params.Client == nil {
+		return nil, errors.New("client is required when creating a MachineScope")
+	}
+	if params.Cluster == nil {
+		return nil, errors.New("cluster is required when creating a MachineScope")
+	}
+	if params.Machine == nil {
+		return nil, errors.New("machine is required when creating a MachineScope")
+	}
+	if params.VultrCluster == nil {
+		return nil, errors.New("vultr cluster is required when creating a MachineScope")
+	}
+	if params.VultrMachine == nil {
+		return nil, errors.New("vultr machine is required when creating a MachineScope")
+	}
+
 	apiKey := os.Getenv("VULTR_API_KEY")
 	params.VultrClient = vultr.NewClient(apiKey, nil)
 
@@ -65,8 +81,9 @@ func NewMachineScope(params MachineScopeParams) (*MachineScope, error) {
 		Logger:       params.Logger,
 		Cluster:      params.Cluster,
 		Machine:      params.Machine,
-		VultrClient:  params.VultrClient,
+		VultrCluster: params.VultrCluster,
 		VultrMachine: params.VultrMachine,
+		VultrClient:  params.VultrClient,
 		patchHelper:  helper,
 	}, nil
 }

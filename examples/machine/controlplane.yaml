@@ -33,7 +33,7 @@ metadata:
 spec:
   initConfiguration:
     nodeRegistration:
-      name: '{{ ds.meta_data.hostname }}'
+      name: '{{ ds.meta_data.public_ipv4 }}'
   clusterConfiguration:
     apiServer: {}
     controllerManager: {}
