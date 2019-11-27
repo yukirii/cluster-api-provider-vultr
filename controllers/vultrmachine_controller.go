@@ -230,6 +230,7 @@ func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (
 		}
 
 		options := &vultr.ServerOptions{
+			Hostname: machineScope.Machine.Name,
 			UserData: string(userdata),
 			SSHKey:   sshKeyID,
 			Tag:      fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name),
