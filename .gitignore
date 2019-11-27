@@ -19,6 +19,8 @@ bin
 # direnv
 .envrc
 
+kubeconfig
+
 _out
 examples/provider-components/provider-components-*.yaml
 
