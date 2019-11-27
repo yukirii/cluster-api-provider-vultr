@@ -1,9 +1,8 @@
 apiVersion: cluster.x-k8s.io/v1alpha2
 kind: Machine
 metadata:
-  name: ${CLUSTER_NAME}-controlplane-0
+  name: ${CLUSTER_NAME}-node-0
   labels:
-    cluster.x-k8s.io/control-plane: "true"
     cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
 spec:
   version: ${KUBERNETES_VERSION}
@@ -11,16 +10,16 @@ spec:
     configRef:
       apiVersion: bootstrap.cluster.x-k8s.io/v1alpha2
       kind: KubeadmConfig
-      name: ${CLUSTER_NAME}-controlplane-0
+      name: ${CLUSTER_NAME}-node-0
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha2
     kind: VultrMachine
-    name: ${CLUSTER_NAME}-controlplane-0
+    name: ${CLUSTER_NAME}-node-0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha2
 kind: VultrMachine
 metadata:
-  name: ${CLUSTER_NAME}-controlplane-0
+  name: ${CLUSTER_NAME}-node-0
 spec:
   planID: ${CONTROL_PLANE_PLAN_ID}
   osID: ${CONTROL_PLANE_OS_ID}
@@ -29,11 +28,13 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha2
 kind: KubeadmConfig
 metadata:
-  name: ${CLUSTER_NAME}-controlplane-0
+  name: ${CLUSTER_NAME}-node-0
 spec:
-  initConfiguration:
+  joinConfiguration:
     nodeRegistration:
-      name: '{{ ds.meta_data.public_ipv4 }}'
+      name: '{{ ds.meta_data.hostname }}'
+      kubeletExtraArgs:
+        cloud-provider: external
   clusterConfiguration:
     apiServer: {}
     controllerManager: {}

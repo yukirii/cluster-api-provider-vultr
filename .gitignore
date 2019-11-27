@@ -23,5 +23,7 @@ kubeconfig
 
 _out
 examples/provider-components/provider-components-*.yaml
+examples/addons/calico.yaml
+examples/addons/cloud-provider-vultr.yaml
 
 .DS_Store

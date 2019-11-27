@@ -31,10 +31,14 @@ COMPONENTS_CLUSTER_API_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider
 COMPONENTS_KUBEADM_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-kubeadm.yaml
 COMPONENTS_VULTR_GENERATED_FILE=${SOURCE_DIR}/provider-components/provider-components-vultr.yaml
 
+ADDON_CALICO_GENERATED_FILE=${SOURCE_DIR}/addons/calico.yaml
+ADDON_VULTR_PROVIDER_GENERATED_FILE=${SOURCE_DIR}/addons/cloud-provider-vultr.yaml
+
 CLUSTER_GENERATED_FILE=${OUTPUT_DIR}/cluster.yaml
+CONTROLPLANE_GENERATED_FILE=${OUTPUT_DIR}/controlplane.yaml
 MACHINES_GENERATED_FILE=${OUTPUT_DIR}/machines.yaml
 PROVIDER_COMPONENTS_GENERATED_FILE=${OUTPUT_DIR}/provider-components.yaml
-ADDON_GENERATED_FILE=${OUTPUT_DIR}/addon.yaml
+ADDON_GENERATED_FILE=${OUTPUT_DIR}/addons.yaml
 
 if [ -d "$OUTPUT_DIR" ]; then
   echo "ERR: Folder ${OUTPUT_DIR} already exists. Delete it manually before running this script."
@@ -46,6 +50,10 @@ mkdir -p "${OUTPUT_DIR}"
 # Generate cluster manifest
 kustomize build "${SOURCE_DIR}/cluster" | envsubst > "${CLUSTER_GENERATED_FILE}"
 echo "Generated ${CLUSTER_GENERATED_FILE}"
+
+# Generate controlplane manifest
+kustomize build "${SOURCE_DIR}/controlplane" | envsubst > "${CONTROLPLANE_GENERATED_FILE}"
+echo "Generated ${CONTROLPLANE_GENERATED_FILE}"
 
 # Generate machine manifest
 kustomize build "${SOURCE_DIR}/machine" | envsubst > "${MACHINES_GENERATED_FILE}"
@@ -65,10 +73,19 @@ kustomize build "github.com/kubernetes-sigs/cluster-api-bootstrap-provider-kubea
 echo "Generated ${COMPONENTS_KUBEADM_GENERATED_FILE}"
 
 # Download Network Plugin (Calico) manifest
-curl -sL https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml -o "${ADDON_GENERATED_FILE}"
-echo "Downloaded ${ADDON_GENERATED_FILE}"
+curl -sL https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml -o "${ADDON_CALICO_GENERATED_FILE}"
+echo "Downloaded ${ADDON_CALICO_GENERATED_FILE}"
+
+## Cloud Provider Vultr
+curl -sL https://raw.githubusercontent.com/yukirii/cloud-provider-vultr/master/manifests/cloud-controller-manager.yaml -o "${ADDON_VULTR_PROVIDER_GENERATED_FILE}"
+echo "Downloaded ${ADDON_VULTR_PROVIDER_GENERATED_FILE}"
 
 # Generate a single provider components file.
 kustomize build "${SOURCE_DIR}/provider-components" | envsubst > "${PROVIDER_COMPONENTS_GENERATED_FILE}"
 echo "Generated ${PROVIDER_COMPONENTS_GENERATED_FILE}"
-echo "WARNING: ${PROVIDER_COMPONENTS_GENERATED_FILE} includes Vultr credentials"
+echo "⚠️ WARNING: ${PROVIDER_COMPONENTS_GENERATED_FILE} includes Vultr credentials"
+
+# Generate a single addon components file.
+kustomize build "${SOURCE_DIR}/addons" | envsubst > "${ADDON_GENERATED_FILE}"
+echo "Generated ${ADDON_GENERATED_FILE}"
+echo "⚠️ WARNING: ${ADDON_GENERATED_FILE} includes Vultr credentials"
