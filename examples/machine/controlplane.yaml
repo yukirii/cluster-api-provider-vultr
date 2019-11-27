@@ -33,7 +33,9 @@ metadata:
 spec:
   initConfiguration:
     nodeRegistration:
-      name: '{{ ds.meta_data.public_ipv4 }}'
+      name: '{{ ds.meta_data.hostname }}'
+      kubeletExtraArgs:
+        cloud-provider: external
   clusterConfiguration:
     apiServer: {}
     controllerManager: {}
