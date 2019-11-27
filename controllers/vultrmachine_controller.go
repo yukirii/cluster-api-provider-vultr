@@ -235,9 +235,9 @@ func (r *VultrMachineReconciler) getOrCreate(machineScope *scope.MachineScope) (
 			Tag:      fmt.Sprintf("%s:owned", machineScope.VultrCluster.Name),
 		}
 
-		// Set ReservedIP if the Machine has control-plane annotation
-		annotations := machineScope.Machine.GetAnnotations()
-		if annotations["cluster.x-k8s.io/control-plane"] == "true" {
+		// Set ReservedIP if the Machine has control-plane label
+		labels := machineScope.Machine.GetLabels()
+		if labels["cluster.x-k8s.io/control-plane"] == "true" {
 			options.ReservedIP = machineScope.VultrCluster.Status.APIEndpoints[0].Host
 		}
 
