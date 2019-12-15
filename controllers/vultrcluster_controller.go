@@ -57,22 +57,9 @@ func (r *VultrClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result, ret
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the Cluster.
-	cluster, err := util.GetOwnerCluster(ctx, r.Client, vultrCluster.ObjectMeta)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-	if cluster == nil {
-		log.Info("Cluster Controller has not yet set OwnerRef")
-		return ctrl.Result{}, nil
-	}
-
-	log = r.Log.WithValues("cluster", cluster.Name)
-
 	clusterScope, err := scope.NewClusterScope(scope.ClusterScopeParams{
 		Client:       r.Client,
 		Logger:       log,
-		Cluster:      cluster,
 		VultrCluster: vultrCluster,
 	})
 	if err != nil {
