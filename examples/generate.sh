@@ -9,7 +9,7 @@ CALICO_VERSION="v3.10"
 # Vultr Settings
 export SSH_KEY_NAME="${SSH_KEY_NAME:-default}"
 export VULTR_REGION="${VULTR_REGION:-25}"   # Tokyo
-export VULTR_B64ENCODED_API_KEY=$(echo ${VULTR_API_KEY} | base64)
+export VULTR_B64ENCODED_API_KEY=$(echo ${VULTR_API_KEY} | tr -d '\n' | base64)
 
 # Cluster Settings
 export KUBERNETES_VERSION="${KUBERNETES_VERSION:-v1.17.0}"
