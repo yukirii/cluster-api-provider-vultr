@@ -1,20 +1,20 @@
-# ---
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: capv-controller-manager
-#   namespace: capv-system
-# spec:
-#   template:
-#     spec:
-#       containers:
-#       - name: manager
-#         image: TODO
-#       tolerations:
-#       - effect: NoSchedule
-#         key: node-role.kubernetes.io/master
-#       - key: CriticalAddonsOnly
-#         operator: Exists
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capv-controller-manager
+  namespace: capv-system
+spec:
+  template:
+    spec:
+      containers:
+      - image: yukirii/cluster-api-provider-vultr:latest
+        name: manager
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      - key: CriticalAddonsOnly
+        operator: Exists
 ---
 apiVersion: apps/v1
 kind: Deployment
