@@ -59,6 +59,8 @@ spec:
               description: PowerStatus represents that the VPS is powerd on or not
               type: string
             ready:
+              description: Ready represents the infrastructure is ready to be used
+                or not.
               type: boolean
             serverState:
               description: ServerState represents a detail of server state.

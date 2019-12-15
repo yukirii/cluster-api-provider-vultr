@@ -24,7 +24,6 @@ import (
 
 	vultr "github.com/JamesClonk/vultr/lib"
 	"github.com/go-logr/logr"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha2"
 	"sigs.k8s.io/cluster-api/util/patch"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +32,6 @@ type ClusterScopeParams struct {
 	VultrClient  *vultr.Client
 	Client       client.Client
 	Logger       logr.Logger
-	Cluster      *clusterv1.Cluster
 	VultrCluster *infrav1alpha2.VultrCluster
 }
 
@@ -41,7 +39,6 @@ type ClusterScope struct {
 	VultrClient  *vultr.Client
 	client       client.Client
 	Logger       logr.Logger
-	Cluster      *clusterv1.Cluster
 	VultrCluster *infrav1alpha2.VultrCluster
 	patchHelper  *patch.Helper
 }
@@ -59,7 +56,6 @@ func NewClusterScope(params ClusterScopeParams) (*ClusterScope, error) {
 	return &ClusterScope{
 		client:       params.Client,
 		Logger:       params.Logger,
-		Cluster:      params.Cluster,
 		VultrCluster: params.VultrCluster,
 		VultrClient:  params.VultrClient,
 		patchHelper:  helper,

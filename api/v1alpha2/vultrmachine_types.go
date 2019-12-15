@@ -43,6 +43,7 @@ type VultrMachineSpec struct {
 
 // VultrMachineStatus defines the observed state of VultrMachine
 type VultrMachineStatus struct {
+	// Ready represents the infrastructure is ready to be used or not.
 	Ready bool `json:"ready"`
 
 	// ServerStatus represents the status of subscription.

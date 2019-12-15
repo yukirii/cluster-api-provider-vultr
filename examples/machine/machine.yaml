@@ -35,6 +35,3 @@ spec:
       name: '{{ ds.meta_data.hostname }}'
       kubeletExtraArgs:
         cloud-provider: external
-  clusterConfiguration:
-    apiServer: {}
-    controllerManager: {}
